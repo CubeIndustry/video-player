@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video-Player</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="https://cubeindustry.github.io/cloud/DATA/CubeIndustry/Pictures/Icons/icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://cubeindustry.github.io/cloud/DATA/CubeIndustry/Pictures/Icons/icon.png" type="image/png">
+    <link rel="mask-icon" href="https://cubeindustry.github.io/icon.svg" color="#0E1525">
+    <style>
+        * {
+            scrollbar-width: auto;
+            scrollbar-color: #B4BCC2 #0c0d0f;
+            overflow: hidden;
+        }
+
+        *::-webkit-scrollbar {
+            width: 12.5px;
+        }
+
+        *::-webkit-scrollbar-track {
+            background: #0c0d0f;
+        }
+
+        *::-webkit-scrollbar-thumb {
+            background-color: #B4BCC2;
+            border-radius: 10px;
+            border: 3px solid #0c0d0f;
+        }
+
+        body {
+            background-color: #0E1525;
+            color: #C2C8CC;
+            font-family: 'Manrope', sans-serif;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            text-align: center;
+            align-items: center;
+            height: 100%;
+            margin: 0;
+        }
+
+        .video-player {
+            text-align: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        .choose-video-btn, .control-btn, .video-buttons i {
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, color 0.3s ease;
+        }
+        #video{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .choose-video-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(48, 48, 48, 0.5);
+            border-radius: 50%;
+            color: white;
+            padding: 5px;
+            border: none;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.8s ease;
+        }
+        .choose-video-btn:hover {
+            background-color: rgba(194, 200, 204, 0.5);
+        }
+
+        .video-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .video-buttons i:hover {
+            color: #C2C8CC; 
+        }
+        .player-controls {
+            display: flex;
+            justify-content: center;
+            position: absolute;
+            bottom: 25px;
+            padding: 10px;
+            margin: 10px;
+            left: calc(50% - 250px);
+            transition: 0.8s ease;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(48, 48, 48, 0.5);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 1.5em;
+            display: flex;
+            margin-left: 25px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background-color: rgba(194, 200, 204, 0.5);
+            transform: scale(1.1);
+        }
+
+        .stop-btn {
+            background-color: rgba(48, 48, 48, 0.5);
+        }
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            position: absolute;
+            left: 1%;
+            bottom: 10px;
+            width: 98%;
+            transition: 0.8s ease;
+        }
+
+        .progress-bar, #volume, #speed, #progress-bar {
+            width: 98%;
+            height: 8px;
+            background: #303030;
+            border-radius: 10px;
+            outline: none;
+            transition: background 0.8s ease;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(145deg, #303030, #585858);
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            animation: fade-in-out 3s ease forwards;
+            z-index: 10;
+            font-family: 'Helvetica', sans-serif;
+            font-size: 1rem;
+        }
+
+        .notification .close-btn {
+            background-color: transparent;
+            color: #C2C8CC;
+            font-size: 1.5em;
+            cursor: pointer;
+            border: none;
+        }
+
+        .notification .close-btn:hover {
+            color: #C2C8CC;
+        }
+
+        @keyframes fade-in-out {
+            0% { opacity: 0; transform: translateY(-10px); }
+            20%, 80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <video id="video"></video>
+    <div class="video-player">
+        <div id="notification" class="notification" style="display: none;">
+            <span id="notification-text"></span>
+            <button class="close-btn" onclick="hideNotification()">x</button>
+        </div>
+
+        <input type="file" id="fileInput" accept=".mp4, .mkv, .webm, .avi, .hevc" onchange="loadFiles(event)" hidden>
+        <button onclick="document.getElementById('fileInput').click()" class="choose-video-btn">
+            <i class="fas fa-folder-open"></i>
+        </button>
+        <div class="progress-container">
+            <span id="current-time">0:00</span>
+            <input type="range" id="progress-bar" min="0" max="100" value="0" class="progress-bar" onchange="seekVideo()">
+            <span id="total-duration">0:00</span>
+        </div>
+
+        <div class="player-controls">
+            <button class="control-btn" onclick="loopVideo()" id="loop-btn">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button class="control-btn" onclick="prevVideo()">
+                <i class="fas fa-backward"></i>
+            </button>
+            <button class="control-btn" onclick="playPause()">
+                <i class="fas fa-play" id="play-icon"></i>
+            </button>
+            <button class="control-btn">
+                <i class="fas fa-forward"></i>
+            </button>
+            <button class="control-btn stop-btn" onclick="stopPlayback()">
+                <i class="fas fa-stop" id="stop-icon"></i>
+            </button>
+        </div>
+        <div id="playlist" class="playlist" style="display: none;"></div>
+    </div>
+    <script>
+        let currentVideo = 0;
+        let isPlaying = false;
+        let isLooping = false;
+        let playlist = [];
+        const videoElement = document.getElementById('video');  
+
+        function loadFiles(event) {
+            const file = event.target.files[0];
+            if (file) {
+                playlist = [file];  
+                videoElement.src = URL.createObjectURL(file);  
+                videoElement.style.display = "block";  
+                videoElement.play().catch(error => {
+                    console.error("Error:", error);
+                });
+                updateDuration();
+            }
+        }
+
+        function playPause() {
+            if (playlist.length === 0) {
+                showNotification("No videos available to play");
+                return;
+            }
+
+            if (isPlaying) {
+                videoElement.pause();
+                document.querySelector("#play-icon").classList.replace("fa-pause", "fa-play");
+                showNotification("Paused");
+            } else {
+                videoElement.play().catch(error => {
+                    console.error("Error:", error);
+                });
+                document.querySelector("#play-icon").classList.replace("fa-play", "fa-pause");
+                showNotification("Playing");
+            }
+            isPlaying = !isPlaying;
+        }
+        function loopVideo() {
+            isLooping = !isLooping;
+            video.loop = isLooping;
+            document.getElementById('loop-btn').style.backgroundColor = isLooping ? 'rgba(189, 223, 240, 0.5)' : 'rgba(48, 48, 48, 0.5)';
+        }
+        function stopPlayback(){
+            video.pause();
+            playlist = [];
+        }
+        function updateDuration() {
+            const progressBar = document.getElementById("progress-bar");
+
+            videoElement.onloadedmetadata = () => {
+                document.getElementById("total-duration").textContent = formatTime(videoElement.duration);
+                progressBar.max = videoElement.duration;
+            };
+
+            videoElement.ontimeupdate = () => {
+                document.getElementById("current-time").textContent = formatTime(videoElement.currentTime);
+                progressBar.value = videoElement.currentTime;
+            };
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' + secs : secs}`;
+        }
+
+        function seekVideo() {
+            videoElement.currentTime = document.getElementById("progress-bar").value;
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById("notification");
+            const notificationText = document.getElementById("notification-text");
+            notificationText.innerText = message;
+            notification.style.display = "flex";
+            setTimeout(() => {
+                notification.style.display = "none";
+            }, 3000);
+        }
+
+        function hideNotification() {
+            document.getElementById("notification").style.display = "none";
+        }
+        function prevVideo(){
+            const progressBar = document.getElementById("progress-bar");
+            if (progressBar.value > 0) {
+                video.currentTime = 0;
+            } else{
+                showNotification("The video hasn't started yet.");
+            }
+        }
+        let timeout;
+
+        document.body.addEventListener('click', () => {
+            clearTimeout(timeout);
+            showControls();
+            timeout = setTimeout(hideControls, 5000);
+        });
+
+        function showControls() {
+            document.querySelector('.choose-video-btn').style.transform = 'translateX(0)';
+            document.querySelector('.player-controls').style.transform = 'translateY(0)';
+            document.querySelector('.progress-container').style.transform = 'translateX(0)';
+            document.body.style.cursor = 'default';
+        }
+
+        function hideControls() {
+            document.querySelector('.choose-video-btn').style.transform = 'translateX(-100px';
+            document.querySelector('.player-controls').style.transform = 'translateY(150px)';
+            document.querySelector('.progress-container').style.transform = 'translateY(150px)';
+            document.body.style.cursor = 'none';
+        }
+
+        document.body.addEventListener('mousemove', () => {
+            clearTimeout(timeout);
+            showControls();
+            timeout = setTimeout(hideControls, 5000);
+        });
+    </script>
+</body>
+</html>
